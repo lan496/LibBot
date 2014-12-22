@@ -33,7 +33,7 @@ def PostTodayProgram(api,lst):
     postdate+=u']\n'
     
     api.PostUpdate((todaymsg+postdate).encode('utf-8'))
-
+    #print todaymsg+postdate
 
 def PostTomorrowProgram(api,lst):
     tomorrowmsg=u'<明日の日程>\n'
@@ -52,29 +52,37 @@ def PostTomorrowProgram(api,lst):
     postdate+=u']\n'
     
     api.PostUpdate((tomorrowmsg+postdate).encode('utf-8'))
-
+    #print tomorrowmsg+postdate
 
 def PostCloseDay(api,lst): 
-    closemsg=u'<近日の休館日>\n'
-
-    for e in cal.LibClosed(lst,50):
-        closemsg+=u'   '
-        closemsg+=e[0].strftime('%Y-%m-%d')
-
+    head=u'<近日の休館日>\n'
+    foot=u'['+unicode(datetime.now().strftime(u'%Y-%m-%d %H:%M'))+u'現在]\n'
+    
+    msglist=[]
+    for e in cal.LibClosed(lst,80):
+        msg=u'   '
+        msg+=e[0][5:]
         wday=[u'Mon',u'Tue',u'Wed',u'Thu',u'Fri',u'Sat',u'Sun']
-        closemsg+=u'('
-        closemsg+=wday[e[0].weekday()]
-        closemsg+=u')'
+        msg+=u'('
+        msg+=wday[datetime.strptime(e[0],"%Y-%m-%d").weekday()]
+        msg+=u')\n'
+        msglist.append(msg)
 
-        closemsg+=u'\n'
-
-    postdate=u'['
-    postdate+=datetime.now().strftime(u'%Y-%m-%d %H:%M')
-    postdate+=u'現在'
-    postdate+=u']\n'
-
-    api.PostUpdate((closemsg+postdate).encode('utf-8'))
-
+    postmsg=head
+    for e in msglist:
+        if len(postmsg+foot+e)>135:
+            postmsg+=foot
+            api.PostUpdate(postmsg.encode('utf-8'))
+            #print postmsg
+            postmsg=head+e
+        else:
+            postmsg+=e
+    if len(postmsg)>len(head):
+        postmsg+=foot
+        if len(postmsg)>140:
+            postmsg=head+'too long to show.\n'+foot
+        api.PostUpdate(postmsg.encode('utf-8'))
+        #print postmsg
 
 def ModifyFollowers(api):
     followers=api.GetFollowers()
@@ -84,12 +92,12 @@ def ModifyFollowers(api):
 
     non_friends=followers_set-friends_set
     if len(non_friends)==0:
-        print 'No need for follow back'
+        #print 'No need for follow back'
     else:
         for friend in non_friends:
             api.CreateFriendship(friend.id)
-            print "Follow friend name:",
-            print friend.screen_name
+            #print "Follow friend name:",
+            #print friend.screen_name
 
 
 if __name__=='__main__':
@@ -100,16 +108,12 @@ if __name__=='__main__':
         access_token_secret = secret_KUlibbot.twDict['access_token_secret']
     )
 
+    lst=FetchList()
+    PostTodayProgram(api,lst)
+    PostTomorrowProgram(api,lst)
+    PostCloseDay(api,lst)
     try:
-        lst=FetchList()
-        PostTodayProgram(api,lst)
-        PostTomorrowProgram(api,lst)
-        PostCloseDay(api,lst)
-
-    except Exception as err:
-        log.error(traceback.format_exc())
-        raise
-    
-    ModifyFollowers(api)
-
+        ModifyFollowers(api)
+    except:
+        pass
 
