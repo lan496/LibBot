@@ -92,7 +92,7 @@ def ModifyFollowers(api):
 
     non_friends=followers_set-friends_set
     if len(non_friends)==0:
-        #print 'No need for follow back'
+        print 'No need for follow back'
     else:
         for friend in non_friends:
             api.CreateFriendship(friend.id)

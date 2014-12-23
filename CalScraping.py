@@ -2,6 +2,7 @@
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+import re
 
 def LibClosed(lst,d):
     res=[]
@@ -41,18 +42,28 @@ def GetData(caldate):
     
     schedule=[[0] for i in range(len(date))]
     for i,d in enumerate(date):
-        if len(d)==2:
-            schedule[i].append(d.contents[1].strip())
+        if len(d.contents[1])==1:
+            with_tag=""
+            for e in d.contents[3]:
+                with_tag+=unicode(e)
+            p=re.compile(r"<[^>]*?>")
+            status=p.sub("",with_tag).strip()
+            schedule[i].append(status)
+        elif len(d.contents[1])==2:
+            schedule[i].append(unicode(d.contents[1].contents[1].string).strip())
         else:
-            for j in range(0,len(d),3):
-                schedule[i].append(d.contents[j].contents[1].strip())
-        schedule[i][0]=caldate[:8]+str(i+1)
+            for j in range(0,len(d.contents[1]),3):
+                schedule[i].append(unicode(d.contents[1].contents[j].contents[1]).strip())
+        schedule[i][0]=caldate.split('-')[0]+'-'+caldate.split('-')[1]+'-'+str(i+1)
 
     return schedule
+    #return date
 
 if __name__=='__main__':
-    lst = GetData(datetime.today().strftime('%Y-%m-%d'))
-    lst=LibClosed(lst,30)
+    lst = GetData('2015-1-1')
+    #lst=LibClosed(lst,30)
     for l in lst:
-        print l
+        for e in l:
+            print e
+        print '#'*10
 
